@@ -1,0 +1,7 @@
+romkatv/powerlevel10k
+mattmc3/ez-compinit
+zsh-users/zsh-completions
+zsh-users/zsh-autosuggestions
+zdharma-continuum/fast-syntax-highlighting kind:defer
+zsh-users/zsh-history-substring-search
+jeffreytse/zsh-vi-mode

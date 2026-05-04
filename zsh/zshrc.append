@@ -1,0 +1,46 @@
+source ~/.zsh_functions
+
+# zsh-vi-mode config (consumed by jeffreytse/zsh-vi-mode plugin)
+function zvm_config() {
+  ZVM_LINE_INIT_MODE=$ZVM_MODE_INSERT
+  ZVM_VI_INSERT_ESCAPE_BINDKEY=jk
+}
+
+# Load antidote and plugins listed in ~/.zsh_plugins.txt
+source "$(brew --prefix)/opt/antidote/share/antidote/antidote.zsh"
+antidote load
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# fzf shell integration (key bindings + completion)
+[[ -f ~/.fzf.zsh ]] && source ~/.fzf.zsh
+
+# bat-powered preview pane for Ctrl-R history search
+FZF_CTRL_R_OPTS="--preview='echo {} | bat --theme=ansi --language=zsh --color=always --style=plain' --preview-window=down"
+
+# history-substring-search keybindings (up/down arrows)
+autoload_history_substring_search_bindings() {
+  bindkey '^[[A' history-substring-search-up
+  bindkey '^[[B' history-substring-search-down
+}
+
+autoload -Uz add-zsh-hook
+
+# Widget to run a history command immediately after fzf selection (defined but unbound)
+fzf-and-run-widget() {
+  fzf-history-widget
+  zle accept-line
+}
+zle -N fzf-and-run-widget
+
+# Bind Ctrl-R to fzf-history-widget in both vi modes (only if fzf is loaded)
+autoload_fzf_bindings() {
+  if zle -l | grep -q fzf-history-widget; then
+    bindkey -M viins '^R' fzf-history-widget
+    bindkey -M vicmd '^R' fzf-history-widget
+  fi
+}
+
+add-zsh-hook precmd autoload_fzf_bindings
+add-zsh-hook precmd autoload_history_substring_search_bindings

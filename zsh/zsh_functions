@@ -1,0 +1,13 @@
+killport() {
+    port=$1
+    pids=$(lsof -ti tcp:$port)
+
+    if [ -z "$pids" ]; then
+        echo "Error: No process is using port $port"
+        return 1
+    fi
+
+    # Replace newlines with spaces so kill sees multiple PIDs correctly
+    kill -9 $(echo "$pids" | tr '\n' ' ') && \
+        echo "Killed process(es) on port $port:\n$pids"
+}
