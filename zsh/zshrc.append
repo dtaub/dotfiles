@@ -17,12 +17,16 @@ antidote load
 [[ -f ~/.fzf.zsh ]] && source ~/.fzf.zsh
 
 # bat-powered preview pane for Ctrl-R history search
-FZF_CTRL_R_OPTS="--preview='echo {} | bat --theme=ansi --language=zsh --color=always --style=plain' --preview-window=down"
+FZF_CTRL_R_OPTS="--no-sort --preview='echo {} | bat --theme=ansi --language=zsh --color=always --style=plain' --preview-window=down"
 
-# history-substring-search keybindings (up/down arrows)
-autoload_history_substring_search_bindings() {
-  bindkey '^[[A' history-substring-search-up
-  bindkey '^[[B' history-substring-search-down
+# Bind up/down arrows to fzf-history-widget in both vi modes
+autoload_arrow_fzf_bindings() {
+  if zle -l | grep -q fzf-history-widget; then
+    bindkey -M viins '^[[A' fzf-history-prefix-widget
+    bindkey -M viins '^[[B' fzf-history-prefix-widget
+    bindkey -M vicmd '^[[A' fzf-history-prefix-widget
+    bindkey -M vicmd '^[[B' fzf-history-prefix-widget
+  fi
 }
 
 autoload -Uz add-zsh-hook
@@ -34,6 +38,34 @@ fzf-and-run-widget() {
 }
 zle -N fzf-and-run-widget
 
+# Opens fzf on history pre-filtered to commands starting with the current buffer (literal prefix)
+fzf-history-prefix-widget() {
+  local selected num ret
+  # safe local shell options — revert automatically when function exits
+  setopt localoptions noglobsubst noposixbuiltins pipefail no_aliases 2>/dev/null
+  if [[ -n "$LBUFFER" ]]; then
+    # escape regex special chars in the typed prefix
+    local prefix
+    prefix=$(printf '%s\n' "$LBUFFER" | sed 's/[]\[^$.*+?{}()|]/\\&/g')
+    # dump history newest-first, keep only lines whose command starts with prefix
+    selected=( $(fc -rl 1 | rg "^\s*\d+\s+${prefix}" | \
+      FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} $FZF_DEFAULT_OPTS --no-sort -n2.. --tiebreak=index +m $FZF_CTRL_R_OPTS" fzf --query='') )
+    ret=$?
+  else
+    # no prefix typed — show full history
+    selected=( $(fc -rl 1 | \
+      FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} $FZF_DEFAULT_OPTS --no-sort -n2.. --tiebreak=index +m $FZF_CTRL_R_OPTS" fzf) )
+    ret=$?
+  fi
+  if [[ -n "$selected" ]]; then
+    num=$selected[1]  # first word is the history entry number
+    [[ -n "$num" ]] && zle vi-fetch-history -n $num
+  fi
+  zle reset-prompt
+  return $ret
+}
+zle -N fzf-history-prefix-widget
+
 # Bind Ctrl-R to fzf-history-widget in both vi modes (only if fzf is loaded)
 autoload_fzf_bindings() {
   if zle -l | grep -q fzf-history-widget; then
@@ -43,4 +75,4 @@ autoload_fzf_bindings() {
 }
 
 add-zsh-hook precmd autoload_fzf_bindings
-add-zsh-hook precmd autoload_history_substring_search_bindings
+add-zsh-hook precmd autoload_arrow_fzf_bindings
