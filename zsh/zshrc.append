@@ -47,13 +47,13 @@ fzf-history-prefix-widget() {
     # escape regex special chars in the typed prefix
     local prefix
     prefix=$(printf '%s\n' "$LBUFFER" | sed 's/[]\[^$.*+?{}()|]/\\&/g')
-    # dump history newest-first, keep only lines whose command starts with prefix
-    selected=( $(fc -rl 1 | rg "^\s*\d+\s+${prefix}" | \
+    # dump history newest-first, dedupe by command, keep only lines whose command starts with prefix
+    selected=( $(fc -rl 1 | awk '!seen[substr($0, index($0,$2))]++'  | rg "^\s*\d+\s+${prefix}" | \
       FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} $FZF_DEFAULT_OPTS --no-sort -n2.. --tiebreak=index +m $FZF_CTRL_R_OPTS" fzf --query='') )
     ret=$?
   else
-    # no prefix typed — show full history
-    selected=( $(fc -rl 1 | \
+    # no prefix typed — show full history, dedupe by command
+    selected=( $(fc -rl 1 | awk '!seen[substr($0, index($0,$2))]++'  | \
       FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} $FZF_DEFAULT_OPTS --no-sort -n2.. --tiebreak=index +m $FZF_CTRL_R_OPTS" fzf) )
     ret=$?
   fi
