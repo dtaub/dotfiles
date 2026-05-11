@@ -75,7 +75,7 @@ if ! command -v brew >/dev/null 2>&1; then
   exit 1
 fi
 
-for pkg in antidote fzf bat; do
+for pkg in antidote fzf bat rg; do
   if brew list --formula "$pkg" >/dev/null 2>&1; then
     print "$pkg already installed via brew — skipping"
   else
