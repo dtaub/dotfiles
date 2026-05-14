@@ -1,0 +1,6 @@
+brew "antidote"
+brew "fzf"
+brew "bat"
+brew "rg"
+tap "michel-kraemer/zsh-patina"
+brew "zsh-patina"

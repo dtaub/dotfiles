@@ -75,14 +75,7 @@ if ! command -v brew >/dev/null 2>&1; then
   exit 1
 fi
 
-for pkg in antidote fzf bat rg; do
-  if brew list --formula "$pkg" >/dev/null 2>&1; then
-    print "$pkg already installed via brew — skipping"
-  else
-    print "Installing $pkg via brew"
-    brew install "$pkg"
-  fi
-done
+brew bundle --file="$SCRIPT_DIR/Brewfile"
 
 # Install fzf shell integration (~/.fzf.zsh, key bindings, completion)
 if [[ ! -f $HOME/.fzf.zsh ]]; then

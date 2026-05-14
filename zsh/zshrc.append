@@ -44,17 +44,17 @@ fzf-history-prefix-widget() {
   # safe local shell options — revert automatically when function exits
   setopt localoptions noglobsubst noposixbuiltins pipefail no_aliases 2>/dev/null
   if [[ -n "$LBUFFER" ]]; then
-    # escape regex special chars in the typed prefix
-    local prefix
-    prefix=$(printf '%s\n' "$LBUFFER" | sed 's/[]\[^$.*+?{}()|]/\\&/g')
-    # dump history newest-first, dedupe by command, keep only lines whose command starts with prefix
-    selected=( $(fc -rl 1 | awk '!seen[substr($0, index($0,$2))]++'  | rg "^\s*\d+\s+${prefix}" | \
-      FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} $FZF_DEFAULT_OPTS --no-sort -n2.. --tiebreak=index +m $FZF_CTRL_R_OPTS" fzf --query='') )
+    local prefix="$LBUFFER"
+    # dump history newest-first, dedupe and prefix-filter in one awk pass (plain string match, no subprocess)
+    selected=( $(fc -rl 1 | awk -v p="$prefix" '
+      { cmd = substr($0, index($0,$2)) }
+      substr(cmd, 1, length(p)) == p && !seen[cmd]++
+    ' | FZF_DEFAULT_OPTS="--height 5 $FZF_DEFAULT_OPTS --no-sort -n2.. --tiebreak=index +m $FZF_CTRL_R_OPTS --preview-window=hidden" fzf --query='') )
     ret=$?
   else
     # no prefix typed — show full history, dedupe by command
-    selected=( $(fc -rl 1 | awk '!seen[substr($0, index($0,$2))]++'  | \
-      FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} $FZF_DEFAULT_OPTS --no-sort -n2.. --tiebreak=index +m $FZF_CTRL_R_OPTS" fzf) )
+    selected=( $(fc -rl 1 | awk '!seen[substr($0, index($0,$2))]++' | \
+      FZF_DEFAULT_OPTS="--height 5 $FZF_DEFAULT_OPTS --no-sort -n2.. --tiebreak=index +m $FZF_CTRL_R_OPTS --preview-window=hidden" fzf) )
     ret=$?
   fi
   if [[ -n "$selected" ]]; then
@@ -76,3 +76,5 @@ autoload_fzf_bindings() {
 
 add-zsh-hook precmd autoload_fzf_bindings
 add-zsh-hook precmd autoload_arrow_fzf_bindings
+
+eval "$(/opt/homebrew/bin/zsh-patina activate)"
