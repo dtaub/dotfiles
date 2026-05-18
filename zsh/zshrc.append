@@ -6,9 +6,13 @@ function zvm_config() {
   ZVM_VI_INSERT_ESCAPE_BINDKEY=jk
 }
 
-# Load antidote and plugins listed in ~/.zsh_plugins.txt
+# Load antidote and plugins listed in ~/.zsh_plugins.txt (with static cache)
 source "$(brew --prefix)/opt/antidote/share/antidote/antidote.zsh"
-antidote load
+zsh_plugins=~/.zsh_plugins.zsh
+if [[ ! $zsh_plugins -nt ~/.zsh_plugins.txt ]]; then
+  antidote bundle < ~/.zsh_plugins.txt > $zsh_plugins
+fi
+source $zsh_plugins
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
